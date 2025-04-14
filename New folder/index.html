@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>timer </title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+            height: 100vh;
+        }
+
+        #video-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: -1;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            color: white;
+            text-shadow: 2px 2px 8px #000000;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #timer {
+            font-size: 200px;
+            margin: 20px 0;
+            transition: all 0.3s;
+        }
+
+        .settings {
+            margin: 30px 0;
+            transition: all 0.3s;
+        }
+
+        .settings input {
+            padding: 12px;
+            font-size: 20px;
+            width: 180px;
+            margin: 0 15px;
+            border: 2px solid white;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        button {
+            padding: 18px 40px;
+            font-size: 24px;
+            margin: 15px;
+            background: rgba(255, 255, 255, 0.3);
+            border: none;
+            color: white;
+            cursor: pointer;
+            border-radius: 12px;
+            transition: all 0.3s;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        #controls {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            transition: all 0.3s;
+        }
+
+        .small-btn {
+            font-size: 16px;
+            padding: 10px 20px;
+            margin: 8px;
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        .action-btn {
+            margin-top: 20px;
+            padding: 15px 30px;
+            font-size: 24px;
+            background: rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <!-- الفيديو الخلفية -->
+    <video id="video-background" autoplay muted loop>
+        <source src="i:\New folder\WhatsApp Video 2025-04-13 at 5.22.42 PM.mp4" type="video/mp4">
+    </video>
+
+    <!-- أصوات الإشعارات -->
+    <audio id="sessionEndSound" preload="auto">
+        <source src="i:\New folder\WhatsApp Audio 2025-04-13 at 6.52.31 PM.mpeg" type="audio/mpeg">
+    </audio>
+    <audio id="breakEndSound" preload="auto">
+        <source src="i:\New folder\WhatsApp Audio 2025-04-13 at 6.52.31 PM.mpeg" type="audio/mpeg">
+    </audio>
+
+    <div class="container">
+        <div id="session">session 1</div>
+        
+        <div class="settings" id="settings">
+            <input type="number" id="studyTime" placeholder="study time   " value="60" min="1">
+            <input type="number" id="breakTime" placeholder=" break time" value="10" min="1">
+            <button onclick="applySettings()">apply settings  </button>
+        </div>
+
+        <div id="timer">60:00</div>
+        
+        <div id="main-controls">
+            <button onclick="startTimer()"> start </button>
+            <button onclick="resetTimer()"> reset  </button>
+        </div>
+        
+        <div id="controls" class="hidden">
+            <button onclick="resetTimer()" class="small-btn"> reset </button>
+        </div>
+
+        <!-- أزرار التحكم اليدوي -->
+        <div id="breakControl" class="hidden">
+            <button class="action-btn" onclick="startBreak()"> start the break </button>
+        </div>
+        
+        <div id="studyControl" class="hidden">
+            <button class="action-btn" onclick="startStudy()"> start the next session </button>
+        </div>
+    </div>
+
+    <script>
+        let studyDuration = 60 * 60;
+        let breakDuration = 10 * 60;
+        let currentTime = studyDuration;
+        let timerInterval;
+        let sessionCount = 1;
+        let isStudy = true;
+
+        // الحصول على عناصر الصوت
+        const sessionSound = document.getElementById('sessionEndSound');
+        const breakSound = document.getElementById('breakEndSound');
+
+        function updateDisplay() {
+            const minutes = Math.floor(currentTime / 60);
+            const seconds = currentTime % 60;
+            document.getElementById('timer').textContent = 
+                `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
+        function startTimer() {
+            hideAllControls();
+            document.getElementById('controls').classList.remove('hidden');
+            
+            applySettings();
+
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                if (currentTime > 0) {
+                    currentTime--;
+                    updateDisplay();
+                } else {
+                    clearInterval(timerInterval);
+                    showNextControl();
+                }
+            }, 1000);
+        }
+
+        function showNextControl() {
+            if (isStudy) {
+                // انتهاء جلسة المذاكرة
+                sessionSound.play().catch(() => {
+                    alert("يرجى النقر على الصفحة لتشغيل الأصوات");
+                });
+                document.getElementById('breakControl').classList.remove('hidden');
+                currentTime = breakDuration;
+                document.getElementById('session').textContent = `الجلسة: ${++sessionCount}`;
+            } else {
+                // انتهاء وقت الراحة
+                breakSound.play().catch(() => {
+                    alert("يرجى النقر على الصفحة لتشغيل الأصوات");
+                });
+                document.getElementById('studyControl').classList.remove('hidden');
+                currentTime = studyDuration;
+            }
+            isStudy = !isStudy;
+            updateDisplay();
+        }
+
+        function startBreak() {
+            document.getElementById('breakControl').classList.add('hidden');
+            startTimer();
+        }
+
+        function startStudy() {
+            document.getElementById('studyControl').classList.add('hidden');
+            startTimer();
+        }
+
+        function resetTimer() {
+            clearInterval(timerInterval);
+            currentTime = studyDuration;
+            sessionCount = 1;
+            isStudy = true;
+            document.getElementById('session').textContent = 'الجلسة: 1';
+            updateDisplay();
+            
+            showMainControls();
+        }
+
+        function applySettings() {
+            const newStudy = parseInt(document.getElementById('studyTime').value);
+            const newBreak = parseInt(document.getElementById('breakTime').value);
+            
+            if (newStudy > 0 && newBreak > 0) {
+                studyDuration = newStudy * 60;
+                breakDuration = newBreak * 60;
+                currentTime = studyDuration;
+                updateDisplay();
+            } else {
+                alert('يجب أن تكون الأوقات أكبر من صفر!');
+            }
+        }
+
+        function hideAllControls() {
+            document.getElementById('settings').classList.add('hidden');
+            document.getElementById('main-controls').classList.add('hidden');
+            document.getElementById('breakControl').classList.add('hidden');
+            document.getElementById('studyControl').classList.add('hidden');
+        }
+
+        function showMainControls() {
+            document.getElementById('settings').classList.remove('hidden');
+            document.getElementById('main-controls').classList.remove('hidden');
+            document.getElementById('controls').classList.add('hidden');
+        }
+
+        // بدء العرض عند تحميل الصفحة
+        updateDisplay();
+    </script>
+</body>
+</html>
